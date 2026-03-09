@@ -119,7 +119,8 @@ public class Egg : MonoBehaviour
 
             if (gamePlay != null)
             {
-                gamePlay.RequestShift();
+                Basket basketComponent = basket.GetComponent<Basket>();
+                gamePlay.OnEggEnteredBasket(basketComponent);
             }
         }
 
@@ -199,6 +200,29 @@ public class Egg : MonoBehaviour
     {
         if (!IsEndOfLifeCollider(other) || LastBasket == null)
         {
+            return;
+        }
+
+        GamePlay gamePlay = GamePlay.Instance;
+        if (gamePlay == null)
+        {
+            gamePlay = FindObjectOfType<GamePlay>();
+        }
+
+        if (gamePlay != null && gamePlay.OnEggDied())
+        {
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.simulated = false;
+            }
+
+            if (eggJump != null)
+            {
+                eggJump.enabled = false;
+            }
+
             return;
         }
 

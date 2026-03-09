@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public class GamePlay : MonoBehaviour
 {
@@ -37,6 +39,19 @@ public class GamePlay : MonoBehaviour
     private bool isShiftingBaskets;
     private bool hasSkippedInitialLockShift;
     public bool IsShiftingBaskets => isShiftingBaskets;
+
+    public GameObject LifeCounterObject;
+    public GameObject ScoreObject;
+    [SerializeField] private int startingLives = 20;
+    [SerializeField] private int scorePerBasket = 10;
+
+    private int currentLives;
+    private int currentScore;
+    private bool isGameOver;
+    private TMP_Text lifeCounterTmpText;
+    private TMP_Text scoreTmpText;
+    private Text lifeCounterUiText;
+    private Text scoreUiText;
 
     void Awake()
     {
@@ -74,6 +89,12 @@ public class GamePlay : MonoBehaviour
 
     void Start()
     {
+        currentLives = Mathf.Max(0, startingLives);
+        currentScore = 0;
+        isGameOver = false;
+        CacheCounterTextComponents();
+        RefreshCountersUI();
+
         ConfigureMainCamera();
 
         if (basketPrefab != null && basketPrefab.GetComponent<RectTransform>() != null)
@@ -239,7 +260,35 @@ public class GamePlay : MonoBehaviour
 
     public void OnEggEnteredBasket(Basket basket)
     {
+        if (isGameOver)
+        {
+            return;
+        }
+
+        currentScore += scorePerBasket;
+        UpdateScoreText();
         RequestShift();
+    }
+
+    public bool OnEggDied()
+    {
+        if (isGameOver)
+        {
+            return true;
+        }
+
+        currentLives = Mathf.Max(0, currentLives - 1);
+        UpdateLifeCounterText();
+
+        if (currentLives > 0)
+        {
+            return false;
+        }
+
+        isGameOver = true;
+        SetShiftState(false);
+        Debug.Log("GAME OVER");
+        return true;
     }
 
     public void RequestShift()
@@ -385,6 +434,55 @@ public class GamePlay : MonoBehaviour
 
         isShiftingBaskets = shifting;
         ShiftStateChanged?.Invoke(shifting);
+    }
+
+    void CacheCounterTextComponents()
+    {
+        if (LifeCounterObject != null)
+        {
+            lifeCounterTmpText = LifeCounterObject.GetComponentInChildren<TMP_Text>(true);
+            lifeCounterUiText = LifeCounterObject.GetComponentInChildren<Text>(true);
+        }
+
+        if (ScoreObject != null)
+        {
+            scoreTmpText = ScoreObject.GetComponentInChildren<TMP_Text>(true);
+            scoreUiText = ScoreObject.GetComponentInChildren<Text>(true);
+        }
+    }
+
+    void RefreshCountersUI()
+    {
+        UpdateLifeCounterText();
+        UpdateScoreText();
+    }
+
+    void UpdateLifeCounterText()
+    {
+        string value = $"x{currentLives}";
+        if (lifeCounterTmpText != null)
+        {
+            lifeCounterTmpText.text = value;
+        }
+
+        if (lifeCounterUiText != null)
+        {
+            lifeCounterUiText.text = value;
+        }
+    }
+
+    void UpdateScoreText()
+    {
+        string value = currentScore.ToString();
+        if (scoreTmpText != null)
+        {
+            scoreTmpText.text = value;
+        }
+
+        if (scoreUiText != null)
+        {
+            scoreUiText.text = value;
+        }
     }
 
 }
