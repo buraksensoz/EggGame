@@ -1,10 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class GamePlay : MonoBehaviour
 {
     public static GamePlay Instance { get; private set; }
+    public static event Action<bool> ShiftStateChanged;
     [System.Serializable]
     public class BasketConfig
     {
@@ -25,7 +27,8 @@ public class GamePlay : MonoBehaviour
     public float cameraOrthographicSize = 10f;
     public float cameraCenterX = 0f;
     public float cameraCenterY = 0f;
-    [SerializeField] private float basketShiftDuration = 0.25f;
+    [SerializeField] private float basketShiftDuration = 0.02f;
+    [SerializeField, Range(0f, 1f)] private float basketShiftSoftness = 0.85f;
     [SerializeField] private float offscreenViewportY = -0.2f;
 
     private readonly float[] visibleViewportY = { 0.25f, 0.5f, 0.75f };
@@ -33,12 +36,23 @@ public class GamePlay : MonoBehaviour
     private int nextBasketConfigIndex;
     private bool isShiftingBaskets;
     private bool hasSkippedInitialLockShift;
+    public bool IsShiftingBaskets => isShiftingBaskets;
 
     void Awake()
     {
         Instance = this;
         // Always use the list defined in code at runtime (ignore Inspector serialized values).
         basketList = CreateDefaultBasketList();
+    }
+
+    void OnDestroy()
+    {
+        if (ReferenceEquals(Instance, this))
+        {
+            Instance = null;
+        }
+
+        ShiftStateChanged = null;
     }
 
     BasketConfig[] CreateDefaultBasketList()
@@ -241,7 +255,7 @@ public class GamePlay : MonoBehaviour
             return;
         }
 
-        isShiftingBaskets = true;
+        SetShiftState(true);
         StartCoroutine(ShiftBasketSequence());
     }
 
@@ -249,7 +263,7 @@ public class GamePlay : MonoBehaviour
     {
         if (basketList == null || basketList.Length == 0 || Camera.main == null)
         {
-            isShiftingBaskets = false;
+            SetShiftState(false);
             yield break;
         }
 
@@ -279,7 +293,6 @@ public class GamePlay : MonoBehaviour
             newMovement.speed = nextConfig.speed;
             newMovement.range = nextConfig.range;
             newMovement.SetAnchorPosition(spawnPosition);
-            newMovement.enabled = false;
         }
 
         spawnedBaskets.Add(newBasket);
@@ -287,7 +300,6 @@ public class GamePlay : MonoBehaviour
         List<GameObject> currentBaskets = new List<GameObject>(spawnedBaskets);
         List<Vector3> fromPositions = new List<Vector3>(currentBaskets.Count);
         List<Vector3> toPositions = new List<Vector3>(currentBaskets.Count);
-        List<BasketMovement> movementComponents = new List<BasketMovement>(currentBaskets.Count);
         float[] targetViewportY = { offscreenViewportY, bottomViewportY, middleViewportY, topViewportY };
 
         for (int i = 0; i < currentBaskets.Count && i < targetViewportY.Length; i++)
@@ -297,8 +309,6 @@ public class GamePlay : MonoBehaviour
             fromPositions.Add(fromPosition);
 
             BasketMovement movement = basketObject != null ? basketObject.GetComponent<BasketMovement>() : null;
-            movementComponents.Add(movement);
-
             Vector3 xReferenceWorldPosition = basketObject != null ? basketObject.transform.position : Vector3.zero;
             if (movement != null)
             {
@@ -312,18 +322,16 @@ public class GamePlay : MonoBehaviour
             Vector3 targetPosition = Camera.main.ViewportToWorldPoint(new Vector3(viewportPoint.x, targetViewportY[i], depth));
             targetPosition.z = 0f;
             toPositions.Add(targetPosition);
-
-            if (movement != null)
-            {
-                movement.enabled = false;
-            }
         }
 
+        float effectiveShiftDuration = Mathf.Max(0f, basketShiftDuration);
         float elapsed = 0f;
-        while (elapsed < basketShiftDuration)
+        while (elapsed < effectiveShiftDuration)
         {
             elapsed += Time.deltaTime;
-            float t = basketShiftDuration <= 0f ? 1f : Mathf.Clamp01(elapsed / basketShiftDuration);
+            float t = effectiveShiftDuration <= 0f ? 1f : Mathf.Clamp01(elapsed / effectiveShiftDuration);
+            float easedT = Mathf.SmoothStep(0f, 1f, t);
+            float transitionT = Mathf.Lerp(t, easedT, basketShiftSoftness);
 
             for (int i = 0; i < currentBaskets.Count && i < fromPositions.Count && i < toPositions.Count; i++)
             {
@@ -333,7 +341,7 @@ public class GamePlay : MonoBehaviour
                     continue;
                 }
 
-                basketObject.transform.position = Vector3.Lerp(fromPositions[i], toPositions[i], t);
+                basketObject.transform.position = Vector3.Lerp(fromPositions[i], toPositions[i], transitionT);
             }
 
             yield return null;
@@ -348,11 +356,10 @@ public class GamePlay : MonoBehaviour
             }
 
             basketObject.transform.position = toPositions[i];
-            BasketMovement movement = movementComponents[i];
+            BasketMovement movement = basketObject.GetComponent<BasketMovement>();
             if (movement != null)
             {
                 movement.SetAnchorPosition(toPositions[i]);
-                movement.enabled = true;
             }
         }
 
@@ -366,7 +373,18 @@ public class GamePlay : MonoBehaviour
             }
         }
 
-        isShiftingBaskets = false;
+        SetShiftState(false);
+    }
+
+    void SetShiftState(bool shifting)
+    {
+        if (isShiftingBaskets == shifting)
+        {
+            return;
+        }
+
+        isShiftingBaskets = shifting;
+        ShiftStateChanged?.Invoke(shifting);
     }
 
 }

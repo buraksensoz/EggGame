@@ -16,6 +16,8 @@ public class BasketMovement : MonoBehaviour
     private Vector2 startPos;
     private Vector2 cachedHalfExtents;
     private bool hasCachedHalfExtents;
+    private bool isPausedByShift;
+    private float movementTime;
 
     void Start()
     {
@@ -23,10 +25,37 @@ public class BasketMovement : MonoBehaviour
         RefreshCachedHalfExtents();
     }
 
+    void OnEnable()
+    {
+        GamePlay.ShiftStateChanged += OnShiftStateChanged;
+
+        GamePlay gamePlay = GamePlay.Instance;
+        if (gamePlay != null)
+        {
+            isPausedByShift = gamePlay.IsShiftingBaskets;
+        }
+    }
+
+    void OnDisable()
+    {
+        GamePlay.ShiftStateChanged -= OnShiftStateChanged;
+    }
+
+    void OnShiftStateChanged(bool isShifting)
+    {
+        isPausedByShift = isShifting;
+    }
+
     void Update()
     {
+        if (isPausedByShift)
+        {
+            return;
+        }
+
         float clampedRange = GetClampedRangeInsideCamera();
-        float offset = Mathf.Sin(Time.time * speed) * clampedRange;
+        movementTime += Time.deltaTime * Mathf.Max(0f, speed);
+        float offset = Mathf.Sin(movementTime) * clampedRange;
 
         switch (moveType)
         {
@@ -47,6 +76,7 @@ public class BasketMovement : MonoBehaviour
     {
         startPos = anchorPosition;
         transform.position = anchorPosition;
+        movementTime = 0f;
     }
 
     public Vector2 GetAnchorPosition()
