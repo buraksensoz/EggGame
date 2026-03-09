@@ -21,6 +21,7 @@ public class Egg : MonoBehaviour
 
     private Transform lockedBasketTransform;
     private bool isLockedInBasket;
+    private bool suppressShiftOnEnter;
 
     public bool IsLockedInBasket => isLockedInBasket;
 
@@ -80,6 +81,8 @@ public class Egg : MonoBehaviour
             return;
         }
 
+        bool isNewLock = !isLockedInBasket || lockedBasketTransform != basket.transform;
+
         LastBasket = basket;
         LastBasketLocalPosition = BasketCenterLocalPosition;
         lockedBasketTransform = basket.transform;
@@ -105,6 +108,21 @@ public class Egg : MonoBehaviour
         }
 
         SnapToBasketCenter();
+
+        if (isNewLock && !suppressShiftOnEnter)
+        {
+            GamePlay gamePlay = GamePlay.Instance;
+            if (gamePlay == null)
+            {
+                gamePlay = FindObjectOfType<GamePlay>();
+            }
+
+            if (gamePlay != null)
+            {
+                gamePlay.RequestShift();
+            }
+        }
+
     }
 
     public void OnJumpStarted()
@@ -217,7 +235,9 @@ public class Egg : MonoBehaviour
             eggJump.waitingToReEnable = false;
         }
 
+        suppressShiftOnEnter = true;
         EnterBasket(LastBasket);
+        suppressShiftOnEnter = false;
     }
 
     void SnapToBasketCenter()

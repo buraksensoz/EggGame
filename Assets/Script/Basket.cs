@@ -11,7 +11,6 @@ public class Basket : MonoBehaviour
      * - enteredBasket is controlled by Egg (set on jump, reset on death).
      */
     public bool enteredBasket = false;
-    [SerializeField] private float lockDistance = 0.6f;
     private readonly HashSet<Collider2D> enteredEggColliders = new HashSet<Collider2D>();
     // Start is called before the first frame update
     void Start()
@@ -56,7 +55,14 @@ public class Basket : MonoBehaviour
         GameObject eggObject = other.gameObject;
         Egg egg = eggObject.GetComponent<Egg>();
         EggJump eggJump = eggObject.GetComponent<EggJump>();
+        Rigidbody2D eggRb = eggObject.GetComponent<Rigidbody2D>();
         if (egg == null || eggJump == null)
+        {
+            return;
+        }
+
+        // Prevent early lock while the egg is still moving upward.
+        if (eggRb != null && eggRb.velocity.y > 0.05f)
         {
             return;
         }
@@ -68,14 +74,12 @@ public class Basket : MonoBehaviour
             return;
         }
 
-        enteredEggColliders.Add(other);
-
-        Vector3 basketCenterWorld = transform.TransformPoint(egg.BasketCenterLocalPosition);
-        float distanceToCenter = Vector2.Distance(other.transform.position, basketCenterWorld);
-        if (distanceToCenter > lockDistance)
+        if (egg.IsLockedInBasket && egg.GetCurrentBasket() == this)
         {
             return;
         }
+
+        enteredEggColliders.Add(other);
 
         egg.EnterBasket(this.gameObject);
     }

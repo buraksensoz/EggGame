@@ -330,47 +330,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca4e0f3224dab1e4084b5c5512d2bea6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  basketList:
-  - startXPosition: -8
-    moveType: 0
-    speed: 0
-    range: 0
-  - startXPosition: -6.5
-    moveType: 1
-    speed: 0.5
-    range: 20
-  - startXPosition: -5
-    moveType: 1
-    speed: 0.3
-    range: 20
-  - startXPosition: -3.5
-    moveType: 1
-    speed: 2.1
-    range: 2.2
-  - startXPosition: -2
-    moveType: 0
-    speed: 0
-    range: 0
-  - startXPosition: -0.5
-    moveType: 2
-    speed: 1.8
-    range: 1.6
-  - startXPosition: 1
-    moveType: 1
-    speed: 2.4
-    range: 2.8
-  - startXPosition: 2.5
-    moveType: 0
-    speed: 0
-    range: 0
-  - startXPosition: 4
-    moveType: 2
-    speed: 1.4
-    range: 2
-  - startXPosition: 5.5
-    moveType: 1
-    speed: 2
-    range: 1.8
+  basketList: []
   basketPrefab: {fileID: 7409202233700708718, guid: b503c7ea4c371cf4c8b8130ea345227e, type: 3}
   basketSpawnParent: {fileID: 0}
   endOfLifeTransform: {fileID: 1615876230}
@@ -380,6 +340,8 @@ MonoBehaviour:
   cameraOrthographicSize: 10
   cameraCenterX: 0
   cameraCenterY: 0
+  basketShiftDuration: 0.25
+  offscreenViewportY: -0.2
 --- !u!1 &912203237
 GameObject:
   m_ObjectHideFlags: 0
@@ -575,6 +537,10 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Egg
       objectReference: {fileID: 0}
+    - target: {fileID: 4645270776844428764, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
+      propertyPath: jumpForce
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 5794655478301438486, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -613,7 +579,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5794655478301438486, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -15
       objectReference: {fileID: 0}
     - target: {fileID: 5794655478301438486, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
       propertyPath: m_LocalPosition.z
@@ -658,6 +624,10 @@ PrefabInstance:
     - target: {fileID: 5837743793260784325, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
       propertyPath: m_Constraints
       value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5837743793260784325, guid: 0cd439a95b586d04d832bf7e2efafcef, type: 3}
+      propertyPath: m_GravityScale
+      value: 3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
